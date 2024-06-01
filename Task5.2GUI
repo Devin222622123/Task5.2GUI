@@ -1,0 +1,76 @@
+import tkinter as tk
+from tkinter import ttk
+import RPi.GPIO as GPIO
+
+# Setup GPIO mode
+GPIO.setmode(GPIO.BCM)
+GPIO.setwarnings(False)
+
+# Define the GPIO pins for the LEDs
+GREEN_LED_PIN = 23
+ORANGE_LED_PIN = 24
+RED_LED_PIN = 25
+
+# Setup GPIO pins as output
+GPIO.setup(GREEN_LED_PIN, GPIO.OUT)
+GPIO.setup(ORANGE_LED_PIN, GPIO.OUT)
+GPIO.setup(RED_LED_PIN, GPIO.OUT)
+
+# Setup PWM for each LED
+green_pwm = GPIO.PWM(GREEN_LED_PIN, 1000)  # 1 kHz frequency
+orange_pwm = GPIO.PWM(ORANGE_LED_PIN, 1000)
+red_pwm = GPIO.PWM(RED_LED_PIN, 1000)
+
+green_pwm.start(0)  # Start with LED off
+orange_pwm.start(0)
+red_pwm.start(0)
+
+class LEDControlApp:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("LED Control")
+
+        self.create_led_controls()
+
+    def create_led_controls(self):
+        frame = ttk.Frame(self.root, padding=10)
+        frame.pack(fill=tk.X)
+
+        self.create_led_control(frame, "Green", self.update_green_intensity)
+        self.create_led_control(frame, "Orange", self.update_orange_intensity)
+        self.create_led_control(frame, "Red", self.update_red_intensity)
+
+    def create_led_control(self, frame, color, command):
+        subframe = ttk.Frame(frame, padding=5)
+        subframe.pack(side=tk.LEFT, fill=tk.Y)
+
+        label = ttk.Label(subframe, text=f"{color} LED")
+        label.pack()
+
+        slider = ttk.Scale(subframe, from_=0, to=100, orient='horizontal', command=command)
+        slider.pack()
+
+        setattr(self, f"{color.lower()}_slider", slider)
+
+    def update_green_intensity(self, value):
+        green_pwm.ChangeDutyCycle(float(value))
+
+    def update_orange_intensity(self, value):
+        orange_pwm.ChangeDutyCycle(float(value))
+
+    def update_red_intensity(self, value):
+        red_pwm.ChangeDutyCycle(float(value))
+
+def main():
+    root = tk.Tk()
+    app = LEDControlApp(root)
+    root.mainloop()
+
+    # Cleanup GPIO on exit
+    green_pwm.stop()
+    orange_pwm.stop()
+    red_pwm.stop()
+    GPIO.cleanup()
+
+if __name__ == "__main__":
+    main()
